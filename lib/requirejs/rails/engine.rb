@@ -12,6 +12,14 @@ module Requirejs
         config.requirejs.precompile = [/require\.js$/]
       end
 
+      config.after_initialize do |app|
+        config = app.config
+        if config.requirejs.manifest_path.exist? && ActionView::Base.assets_manifest.assets
+          rjs_digests = YAML.load(ERB.new(File.new(config.requirejs.manifest_path).read).result)
+          ActionView::Base.assets_manifest.assets.merge!(rjs_digests)
+        end
+      end
+
       config.before_initialize do |app|
         config = app.config
 
@@ -32,14 +40,6 @@ module Requirejs
           ::ActionController::Base.class_eval do
             attr_accessor :requirejs_included
           end
-        end
-      end
-
-      initializer "requirejs.manifest", :after => "sprockets.environment" do |app|
-        config = app.config
-        if config.requirejs.manifest_path.exist? && config.assets.digests
-          rjs_digests = YAML.load(ERB.new(File.new(config.requirejs.manifest_path).read).result)
-          config.assets.digests.merge!(rjs_digests)
         end
       end
 
